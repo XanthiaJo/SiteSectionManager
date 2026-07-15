@@ -47,6 +47,10 @@ final class SSM_Section_Admin_Page_Renderer {
 				$message = __( 'Site section created.', 'site-section-manager' );
 				$class   = 'notice-success';
 				break;
+			case 'created-home-error':
+				$message = __( 'Site section created, but the Home page could not be created automatically.', 'site-section-manager' );
+				$class   = 'notice-warning';
+				break;
 			case 'updated':
 				$message = __( 'Site section updated.', 'site-section-manager' );
 				$class   = 'notice-success';
@@ -152,7 +156,7 @@ final class SSM_Section_Admin_Page_Renderer {
 		$pages_count      = 'unsectioned' === $view_type ? $this->data->get_unsectioned_count( 'page' ) : $this->data->get_section_count( 'page', $section_id );
 		$categories_count = 'unsectioned' === $view_type ? 0 : $this->data->get_section_term_count( 'category', $section_id );
 		$tags_count       = 'unsectioned' === $view_type ? 0 : $this->data->get_section_term_count( 'post_tag', $section_id );
-		$section_title    = 'unsectioned' === $view_type ? __( 'Unsectioned', 'site-section-manager' ) : get_the_title( $section );
+		$section_title    = 'unsectioned' === $view_type ? __( 'Home', 'site-section-manager' ) : get_the_title( $section );
 		$section_slug_arg = 'unsectioned' === $view_type ? 0 : $section_id;
 		?>
 		<div class="ssm-section-card">
@@ -172,7 +176,7 @@ final class SSM_Section_Admin_Page_Renderer {
 					</div>
 					<div class="ssm-section-field">
 						<label for="ssm_section_content_<?php echo esc_attr( $section_slug_arg ); ?>"><?php esc_html_e( 'Description', 'site-section-manager' ); ?></label>
-						<textarea class="large-text" rows="5" id="ssm_section_content_<?php echo esc_attr( $section_slug_arg ); ?>" name="section_content" <?php disabled( 'unsectioned' === $view_type ); ?>><?php echo esc_textarea( 'unsectioned' === $view_type ? __( 'Items that are not linked to a section.', 'site-section-manager' ) : $section->post_content ); ?></textarea>
+						<textarea class="large-text" rows="5" id="ssm_section_content_<?php echo esc_attr( $section_slug_arg ); ?>" name="section_content" <?php disabled( 'unsectioned' === $view_type ); ?>><?php echo esc_textarea( 'unsectioned' === $view_type ? __( 'Default content that belongs to the main Home section.', 'site-section-manager' ) : $section->post_content ); ?></textarea>
 					</div>
 					<?php if ( 'section' === $view_type ) : ?>
 						<div class="ssm-section-actions">

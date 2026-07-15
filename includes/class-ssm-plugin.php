@@ -20,6 +20,11 @@ final class SSM_Plugin {
 	 */
 	private $admin;
 
+	/**
+	 * @var SSM_Frontend
+	 */
+	private $frontend;
+
 	public static function instance() {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -38,12 +43,17 @@ final class SSM_Plugin {
 	}
 
 	private function __construct() {
-		$this->content = new SSM_Content();
-		$this->admin   = new SSM_Admin( $this->content );
+		$this->content  = new SSM_Content();
+		$this->admin    = new SSM_Admin( $this->content );
+		$this->frontend = new SSM_Frontend( $this->content );
 
 		add_action( 'init', array( $this, 'register_content_types' ) );
 		add_action( 'init', array( $this->content, 'register_term_meta' ) );
+		add_action( 'init', array( $this->content, 'migrate_empty_section_ids_to_home' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( $this->admin, 'enqueue_section_admin_assets' ) );
+		add_action( 'admin_bar_menu', array( $this->admin, 'register_section_admin_bar' ), 90 );
+		add_action( 'wp_enqueue_scripts', array( $this->frontend, 'enqueue_assets' ) );
+		add_action( 'wp_body_open', array( $this->frontend, 'render_global_header' ) );
 		add_action( 'add_meta_boxes', array( $this->admin, 'register_meta_boxes' ) );
 		add_action( 'admin_init', array( $this->admin, 'register_term_form_fields' ) );
 		add_action( 'admin_menu', array( $this->admin, 'register_section_admin_page' ) );
@@ -60,10 +70,13 @@ final class SSM_Plugin {
 		add_action( 'manage_page_posts_custom_column', array( $this->admin, 'render_section_column' ), 10, 2 );
 		add_filter( 'manage_post_posts_columns', array( $this->admin, 'add_section_column' ) );
 		add_action( 'manage_post_posts_custom_column', array( $this->admin, 'render_section_column' ), 10, 2 );
+		add_action( 'bulk_edit_custom_box', array( $this->admin, 'render_bulk_edit_section_field' ), 10, 2 );
+		add_action( 'bulk_edit_posts', array( $this->admin, 'save_bulk_edit_sections' ), 10, 2 );
 		add_action( 'restrict_manage_posts', array( $this->admin, 'render_admin_post_filters' ) );
 		add_action( 'restrict_manage_terms', array( $this->admin, 'render_admin_term_filters' ) );
 		add_action( 'pre_get_posts', array( $this->admin, 'filter_admin_post_queries' ) );
 		add_action( 'pre_get_terms', array( $this->admin, 'filter_admin_term_queries' ) );
+		add_filter( 'wp_count_posts', array( $this->admin, 'filter_wp_count_posts' ), 10, 3 );
 	}
 
 	public function register_content_types() {

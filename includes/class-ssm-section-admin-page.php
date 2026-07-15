@@ -66,6 +66,38 @@ final class SSM_Section_Admin_Page {
 		}
 	}
 
+	public function register_admin_bar( $wp_admin_bar ) {
+		if ( ! is_admin() || ! is_admin_bar_showing() || ! is_object( $wp_admin_bar ) ) {
+			return;
+		}
+
+		$wp_admin_bar->remove_node( 'new-content' );
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'    => 'ssm-admin-home',
+				'title' => '|&nbsp;&nbsp;' . __( 'Home', 'site-section-manager' ),
+				'href'  => admin_url( 'admin.php?page=ssm-site-sections&section_id=0' ),
+				'meta'  => array(
+					'class' => $this->is_home_view() ? 'ssm-admin-bar-current' : '',
+				),
+			)
+		);
+
+		foreach ( $this->content->get_sections() as $section ) {
+			$wp_admin_bar->add_node(
+				array(
+					'id'    => 'ssm-admin-section-' . (int) $section->ID,
+					'title' => get_the_title( $section ),
+					'href'  => $this->get_section_admin_url( (int) $section->ID ),
+					'meta'  => array(
+						'class' => $this->is_current_section( (int) $section->ID ) ? 'ssm-admin-bar-current' : '',
+					),
+				)
+			);
+		}
+	}
+
 	public function enqueue_admin_assets() {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		if ( 0 !== strpos( $page, 'ssm-site-section' ) && 'ssm-site-sections' !== $page ) {
@@ -115,7 +147,10 @@ final class SSM_Section_Admin_Page {
 			exit;
 		}
 
-		wp_safe_redirect( $this->get_section_admin_url( absint( $section_id ), array( 'ssm_notice' => 'created' ) ) );
+		$home_page_id = $this->content->create_section_home_page( (int) $section_id, $title );
+		$notice       = is_wp_error( $home_page_id ) ? 'created-home-error' : 'created';
+
+		wp_safe_redirect( $this->get_section_admin_url( absint( $section_id ), array( 'ssm_notice' => $notice ) ) );
 		exit;
 	}
 
@@ -189,7 +224,7 @@ final class SSM_Section_Admin_Page {
 				'view_type'    => 'unsectioned',
 				'ID'           => 0,
 				'post_type'    => 'site_section',
-				'post_title'   => __( 'Unsectioned', 'site-section-manager' ),
+				'post_title'   => __( 'Home', 'site-section-manager' ),
 				'post_content' => '',
 			);
 		}
@@ -238,6 +273,34 @@ final class SSM_Section_Admin_Page {
 
 	private function get_section_menu_slug( $section_id ) {
 		return 'ssm-site-section-' . absint( $section_id );
+	}
+
+	private function is_home_view() {
+		if ( isset( $_GET['page'] ) && 'ssm-site-sections' === sanitize_key( wp_unslash( $_GET['page'] ) ) && isset( $_GET['section_id'] ) && 0 === absint( $_GET['section_id'] ) ) {
+			return true;
+		}
+
+		if ( isset( $_GET['ssm_section_id'] ) && 0 === absint( $_GET['ssm_section_id'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private function is_current_section( $section_id ) {
+		if ( isset( $_GET['page'] ) && $this->get_section_menu_slug( $section_id ) === sanitize_key( wp_unslash( $_GET['page'] ) ) ) {
+			return true;
+		}
+
+		if ( isset( $_GET['section_id'] ) && $section_id === absint( $_GET['section_id'] ) ) {
+			return true;
+		}
+
+		if ( isset( $_GET['ssm_section_id'] ) && $section_id === absint( $_GET['ssm_section_id'] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	private function get_section_admin_url( $section_id, array $args = array() ) {

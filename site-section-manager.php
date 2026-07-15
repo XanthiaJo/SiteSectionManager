@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Simple Section Manager
+ * Plugin Name: Site Section Manager
  * Description: Organize a single WordPress install into section-scoped pages, posts, categories, and tags without multisite.
  * Version: 0.0.0-dev
  * Author: XanthiaJo
@@ -19,10 +19,12 @@ define( 'SSM_URL', plugin_dir_url( __FILE__ ) );
 require_once SSM_PATH . 'includes/class-ssm-plugin.php';
 require_once SSM_PATH . 'includes/class-ssm-admin.php';
 require_once SSM_PATH . 'includes/class-ssm-content.php';
+require_once SSM_PATH . 'includes/class-ssm-frontend.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-section-admin-page-data.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-section-admin-page-renderer.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-display.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-actions.php';
+require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-bulk-edit.php';
 require_once SSM_PATH . 'includes/class-ssm-content-admin.php';
 require_once SSM_PATH . 'includes/class-ssm-section-admin-page.php';
 

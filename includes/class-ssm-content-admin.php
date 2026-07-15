@@ -15,9 +15,15 @@ final class SSM_Content_Admin {
 	 */
 	private $actions;
 
+	/**
+	 * @var SSM_Content_Admin_Bulk_Edit
+	 */
+	private $bulk_edit;
+
 	public function __construct( SSM_Content $content ) {
-		$this->display = new SSM_Content_Admin_Display( $content );
-		$this->actions = new SSM_Content_Admin_Actions( $content );
+		$this->display   = new SSM_Content_Admin_Display( $content );
+		$this->actions   = new SSM_Content_Admin_Actions( $content );
+		$this->bulk_edit = new SSM_Content_Admin_Bulk_Edit( $content );
 	}
 
 	public function register_hooks() {
@@ -36,8 +42,7 @@ final class SSM_Content_Admin {
 		add_action( 'restrict_manage_terms', array( $this, 'render_admin_term_filters' ) );
 		add_action( 'pre_get_posts', array( $this, 'filter_admin_post_queries' ) );
 		add_action( 'pre_get_terms', array( $this, 'filter_admin_term_queries' ) );
-		add_filter( 'views_edit-post', array( $this, 'filter_post_views' ) );
-		add_filter( 'views_edit-page', array( $this, 'filter_page_views' ) );
+		add_filter( 'wp_count_posts', array( $this, 'filter_wp_count_posts' ), 10, 3 );
 	}
 
 	public function hide_native_content_menus() {
@@ -93,6 +98,14 @@ final class SSM_Content_Admin {
 		$this->display->render_section_column( $column, $post_id );
 	}
 
+	public function render_bulk_edit_section_field( $column_name, $post_type ) {
+		$this->bulk_edit->render_section_field( $column_name, $post_type );
+	}
+
+	public function save_bulk_edit_sections( $post_ids, $shared_post_data ) {
+		$this->bulk_edit->save_sections( $post_ids, $shared_post_data );
+	}
+
 	public function filter_admin_post_queries( $query ) {
 		$this->actions->filter_admin_post_queries( $query );
 	}
@@ -101,11 +114,7 @@ final class SSM_Content_Admin {
 		$this->actions->filter_admin_term_queries( $query );
 	}
 
-	public function filter_post_views( $views ) {
-		return $this->actions->filter_post_views( $views, 'post' );
-	}
-
-	public function filter_page_views( $views ) {
-		return $this->actions->filter_post_views( $views, 'page' );
+	public function filter_wp_count_posts( $counts, $post_type, $perm ) {
+		return $this->actions->filter_wp_count_posts( $counts, $post_type, $perm );
 	}
 }

@@ -70,6 +70,12 @@ The build scripts:
 3. Derive the next version from Conventional Commit messages.
 4. Stamp the generated plugin header in `dist/site-section-manager/site-section-manager.php`.
 
+## Dirty Working Trees
+
+- `build.ps1` is allowed to run on a dirty working tree.
+- This is the expected path for manual packaging while iterating locally.
+- `release.ps1` is different: it creates or validates release tags, so it still requires a clean tree.
+
 ## Tagging
 
 Tags are the release milestone source of truth:

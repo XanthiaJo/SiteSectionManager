@@ -1,4 +1,4 @@
-# Simple Section Manager
+# Site Section Manager
 
 Skeleton WordPress plugin for organizing a single site into section-scoped content without multisite.
 
@@ -23,6 +23,7 @@ Author: XanthiaJo
 
 - Edit the source files in the repo.
 - Run `.\build.ps1` to generate `dist\site-section-manager.zip`.
+- `build.ps1` is allowed on a dirty working tree and is the normal way to make a manual test package.
 - The source plugin header stays at `0.0.0-dev`; release versions are stamped during packaging.
 - The packaged version comes from Conventional Commits and the latest `vX.Y.Z` tag.
 - `feat:` bumps the minor version.
@@ -30,7 +31,7 @@ Author: XanthiaJo
 - `BREAKING CHANGE:` or `!:` bumps the major version.
 - Other non-breaking commits increment the revision segment when there is no newer release tag.
 - Run `.\release.ps1` to build, create the matching `vX.Y.Z` tag if needed, and rebuild the release package.
-- `release.ps1` expects a clean working tree.
+- `release.ps1` is for tagged releases and expects a clean working tree.
 
 ## Contributors
 

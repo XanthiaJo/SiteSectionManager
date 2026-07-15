@@ -23,7 +23,7 @@ final class SSM_Content_Admin_Actions {
 			return;
 		}
 
-		$selected = isset( $_GET['ssm_section_id'] ) ? absint( $_GET['ssm_section_id'] ) : 0;
+		$selected = isset( $_GET['ssm_section_id'] ) && '' !== (string) wp_unslash( $_GET['ssm_section_id'] ) ? absint( $_GET['ssm_section_id'] ) : '';
 		$sections = $this->content->get_sections();
 
 		$this->debug_log(
@@ -36,7 +36,8 @@ final class SSM_Content_Admin_Actions {
 		);
 
 		echo '<select name="ssm_section_id">';
-		echo '<option value="0">' . esc_html__( 'All Site Sections', 'site-section-manager' ) . '</option>';
+		echo '<option value="">' . esc_html__( 'All Site Sections', 'site-section-manager' ) . '</option>';
+		echo '<option value="0"' . selected( $selected, '0', false ) . '>' . esc_html__( 'Home', 'site-section-manager' ) . '</option>';
 
 		foreach ( $sections as $section ) {
 			printf(
@@ -55,11 +56,12 @@ final class SSM_Content_Admin_Actions {
 			return;
 		}
 
-		$selected = isset( $_GET['ssm_section_id'] ) ? absint( $_GET['ssm_section_id'] ) : 0;
+		$selected = isset( $_GET['ssm_section_id'] ) && '' !== (string) wp_unslash( $_GET['ssm_section_id'] ) ? absint( $_GET['ssm_section_id'] ) : '';
 		$sections = $this->content->get_sections();
 
 		echo '<select name="ssm_section_id">';
-		echo '<option value="0">' . esc_html__( 'All Site Sections', 'site-section-manager' ) . '</option>';
+		echo '<option value="">' . esc_html__( 'All Site Sections', 'site-section-manager' ) . '</option>';
+		echo '<option value="0"' . selected( $selected, '0', false ) . '>' . esc_html__( 'Home', 'site-section-manager' ) . '</option>';
 
 		foreach ( $sections as $section ) {
 			printf(
@@ -87,12 +89,7 @@ final class SSM_Content_Admin_Actions {
 		}
 
 		$section_id = isset( $_POST['ssm_section_id'] ) ? absint( wp_unslash( $_POST['ssm_section_id'] ) ) : 0;
-		if ( $section_id > 0 ) {
-			update_post_meta( $post_id, '_ssm_section_id', $section_id );
-			return;
-		}
-
-		delete_post_meta( $post_id, '_ssm_section_id' );
+		update_post_meta( $post_id, '_ssm_section_id', $section_id );
 	}
 
 	public function save_term_section( $term_id, $tt_id ) {
@@ -133,7 +130,7 @@ final class SSM_Content_Admin_Actions {
 			return;
 		}
 
-		if ( ! isset( $_GET['ssm_section_id'] ) ) {
+		if ( ! isset( $_GET['ssm_section_id'] ) || '' === (string) wp_unslash( $_GET['ssm_section_id'] ) ) {
 			$this->debug_log( 'filter_admin_post_queries no section selected', array( 'post_type' => $post_type ) );
 			return;
 		}
@@ -175,7 +172,7 @@ final class SSM_Content_Admin_Actions {
 			return;
 		}
 
-		if ( ! isset( $_GET['ssm_section_id'] ) ) {
+		if ( ! isset( $_GET['ssm_section_id'] ) || '' === (string) wp_unslash( $_GET['ssm_section_id'] ) ) {
 			$this->debug_log( 'filter_admin_term_queries no section selected', array( 'taxonomy' => $taxonomy ) );
 			return;
 		}
@@ -200,40 +197,26 @@ final class SSM_Content_Admin_Actions {
 		);
 	}
 
-	public function filter_post_views( $views, $post_type ) {
-		if ( ! isset( $_GET['ssm_section_id'] ) ) {
-			return $views;
+	public function filter_wp_count_posts( $counts, $post_type, $perm ) {
+		if ( ! in_array( $post_type, array( 'post', 'page' ), true ) || ! isset( $_GET['ssm_section_id'] ) || '' === (string) wp_unslash( $_GET['ssm_section_id'] ) ) {
+			return $counts;
 		}
 
 		$section_id = absint( $_GET['ssm_section_id'] );
-		$counts     = $this->get_section_post_status_counts( $post_type, $section_id );
-
-		foreach ( array(
-			'all'     => 'all',
-			'publish' => 'publish',
-			'draft'   => 'draft',
-			'pending' => 'pending',
-			'private' => 'private',
-			'future'  => 'future',
-			'trash'   => 'trash',
-		) as $view_key => $status_key ) {
-			if ( ! isset( $views[ $view_key ] ) || ! isset( $counts[ $status_key ] ) ) {
-				continue;
-			}
-
-			$views[ $view_key ] = preg_replace( '/\(\d+\)/', '(' . (int) $counts[ $status_key ] . ')', $views[ $view_key ], 1 );
-		}
+		$section_counts = $this->get_section_post_status_counts( $post_type, $section_id );
+		$filtered_counts = $this->normalize_count_object( $counts, $section_counts );
 
 		$this->debug_log(
-			'filter_post_views updated counts',
+			'filter_wp_count_posts updated counts',
 			array(
-				'post_type'  => $post_type,
-				'section_id' => $section_id,
-				'counts'     => $counts,
+				'post_type'      => $post_type,
+				'section_id'     => $section_id,
+				'counts'         => $section_counts,
+				'original_counts'=> $counts,
 			)
 		);
 
-		return $views;
+		return $filtered_counts;
 	}
 
 	private function get_section_post_ids( $post_type, $section_id ) {
@@ -325,6 +308,20 @@ final class SSM_Content_Admin_Actions {
 		}
 
 		return $counts;
+	}
+
+	private function normalize_count_object( $original_counts, array $section_counts ) {
+		$normalized = is_object( $original_counts ) ? clone $original_counts : (object) array();
+
+		foreach ( array( 'publish', 'future', 'draft', 'pending', 'private', 'trash', 'auto-draft', 'inherit', 'all' ) as $status ) {
+			$normalized->{$status} = isset( $section_counts[ $status ] ) ? (int) $section_counts[ $status ] : 0;
+		}
+
+		if ( isset( $normalized->all ) ) {
+			$normalized->all = (int) $section_counts['all'];
+		}
+
+		return $normalized;
 	}
 
 	private function debug_log( $message, array $context = array() ) {

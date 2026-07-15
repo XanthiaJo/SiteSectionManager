@@ -24,6 +24,10 @@ final class SSM_Admin {
 		$this->section_page->register_admin_menu();
 	}
 
+	public function register_section_admin_bar( $wp_admin_bar ) {
+		$this->section_page->register_admin_bar( $wp_admin_bar );
+	}
+
 	public function enqueue_section_admin_assets() {
 		$this->section_page->enqueue_admin_assets();
 	}
@@ -76,6 +80,14 @@ final class SSM_Admin {
 		$this->content_admin->render_section_column( $column, $post_id );
 	}
 
+	public function render_bulk_edit_section_field( $column_name, $post_type ) {
+		$this->content_admin->render_bulk_edit_section_field( $column_name, $post_type );
+	}
+
+	public function save_bulk_edit_sections( $post_ids, $shared_post_data ) {
+		$this->content_admin->save_bulk_edit_sections( $post_ids, $shared_post_data );
+	}
+
 	public function render_admin_post_filters() {
 		$this->content_admin->render_admin_post_filters();
 	}
@@ -90,5 +102,9 @@ final class SSM_Admin {
 
 	public function filter_admin_term_queries( $query ) {
 		$this->content_admin->filter_admin_term_queries( $query );
+	}
+
+	public function filter_wp_count_posts( $counts, $post_type, $perm ) {
+		return $this->content_admin->filter_wp_count_posts( $counts, $post_type, $perm );
 	}
 }
