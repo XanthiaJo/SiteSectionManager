@@ -76,6 +76,14 @@ final class SSM_Admin {
 		$this->content_admin->render_section_column( $column, $post_id );
 	}
 
+	public function render_admin_post_filters() {
+		$this->content_admin->render_admin_post_filters();
+	}
+
+	public function render_admin_term_filters( $taxonomy = '' ) {
+		$this->content_admin->render_admin_term_filters( $taxonomy );
+	}
+
 	public function filter_admin_post_queries( $query ) {
 		$this->content_admin->filter_admin_post_queries( $query );
 	}
