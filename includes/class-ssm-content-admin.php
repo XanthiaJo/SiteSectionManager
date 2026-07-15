@@ -72,6 +72,12 @@ final class SSM_Content_Admin {
 		add_filter( 'manage_category_custom_column', array( $this->display, 'render_term_section_column' ), 10, 3 );
 		add_filter( 'manage_edit-post_tag_columns', array( $this->display, 'add_term_section_column' ) );
 		add_filter( 'manage_post_tag_custom_column', array( $this->display, 'render_term_section_column' ), 10, 3 );
+		add_action( 'quick_edit_custom_box', array( $this, 'render_term_quick_edit_section_field' ), 10, 3 );
+		add_action( 'admin_footer-edit-tags.php', array( $this, 'output_term_quick_edit_script' ) );
+		add_filter( 'bulk_actions-edit-category', array( $this, 'register_term_bulk_actions' ) );
+		add_filter( 'bulk_actions-edit-post_tag', array( $this, 'register_term_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-edit-category', array( $this, 'handle_term_bulk_actions' ), 10, 3 );
+		add_filter( 'handle_bulk_actions-edit-post_tag', array( $this, 'handle_term_bulk_actions' ), 10, 3 );
 	}
 
 	public function render_admin_post_filters() {
@@ -102,8 +108,36 @@ final class SSM_Content_Admin {
 		$this->bulk_edit->render_section_field( $column_name, $post_type );
 	}
 
+	public function render_quick_edit_section_field( $column_name, $post_type, $taxonomy = '' ) {
+		$this->bulk_edit->render_quick_edit_field( $column_name, $post_type );
+	}
+
+	public function output_quick_edit_script() {
+		$this->bulk_edit->output_quick_edit_script();
+	}
+
+	public function render_term_quick_edit_section_field( $column_name, $screen, $taxonomy ) {
+		$this->bulk_edit->render_term_quick_edit_field( $column_name, $screen, $taxonomy );
+	}
+
+	public function output_term_quick_edit_script() {
+		$this->bulk_edit->output_term_quick_edit_script();
+	}
+
 	public function save_bulk_edit_sections( $post_ids, $shared_post_data ) {
 		$this->bulk_edit->save_sections( $post_ids, $shared_post_data );
+	}
+
+	public function save_quick_edit_section( $post_id, $post ) {
+		$this->bulk_edit->save_quick_edit_section( $post_id, $post );
+	}
+
+	public function register_term_bulk_actions( $actions ) {
+		return $this->actions->register_term_bulk_actions( $actions );
+	}
+
+	public function handle_term_bulk_actions( $redirect_to, $action, $term_ids ) {
+		return $this->actions->handle_term_bulk_actions( $redirect_to, $action, $term_ids );
 	}
 
 	public function filter_admin_post_queries( $query ) {

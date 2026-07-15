@@ -10,8 +10,19 @@ final class SSM_Frontend {
 	 */
 	private $content;
 
-	public function __construct( SSM_Content $content ) {
-		$this->content = $content;
+	/**
+	 * @var SSM_Navigation
+	 */
+	private $navigation;
+
+	/**
+	 * @var bool
+	 */
+	private $has_rendered_global_header = false;
+
+	public function __construct( SSM_Content $content, SSM_Navigation $navigation ) {
+		$this->content    = $content;
+		$this->navigation = $navigation;
 	}
 
 	public function enqueue_assets() {
@@ -28,7 +39,7 @@ final class SSM_Frontend {
 	}
 
 	public function render_global_header() {
-		if ( is_admin() ) {
+		if ( is_admin() || $this->has_rendered_global_header ) {
 			return;
 		}
 
@@ -37,6 +48,7 @@ final class SSM_Frontend {
 			return;
 		}
 
+		$this->has_rendered_global_header = true;
 		$current_section_id = $this->get_current_section_id();
 		?>
 		<div class="ssm-global-header">

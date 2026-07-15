@@ -97,10 +97,15 @@ final class SSM_Content_Admin_Display {
 		$section_id = (int) get_post_meta( $post_id, '_ssm_section_id', true );
 		if ( ! $section_id ) {
 			echo esc_html__( 'Home', 'site-section-manager' );
+			echo '<span class="hidden ssm-inline-section-value" data-section-id="0"></span>';
 			return;
 		}
 
 		echo esc_html( get_the_title( $section_id ) );
+		printf(
+			'<span class="hidden ssm-inline-section-value" data-section-id="%d"></span>',
+			(int) $section_id
+		);
 	}
 
 	public function add_term_section_column( $columns ) {
@@ -115,9 +120,12 @@ final class SSM_Content_Admin_Display {
 
 		$section_id = (int) get_term_meta( $term_id, 'ssm_section_id', true );
 		if ( ! $section_id ) {
-			return esc_html__( 'Home', 'site-section-manager' );
+			return esc_html__( 'Home', 'site-section-manager' ) . '<span class="hidden ssm-inline-term-section-value" data-section-id="0"></span>';
 		}
 
-		return esc_html( get_the_title( $section_id ) );
+		return esc_html( get_the_title( $section_id ) ) . sprintf(
+			'<span class="hidden ssm-inline-term-section-value" data-section-id="%d"></span>',
+			(int) $section_id
+		);
 	}
 }

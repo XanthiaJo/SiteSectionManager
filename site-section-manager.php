@@ -20,6 +20,8 @@ require_once SSM_PATH . 'includes/class-ssm-plugin.php';
 require_once SSM_PATH . 'includes/class-ssm-admin.php';
 require_once SSM_PATH . 'includes/class-ssm-content.php';
 require_once SSM_PATH . 'includes/class-ssm-frontend.php';
+require_once SSM_PATH . 'includes/class-ssm-navigation.php';
+require_once SSM_PATH . 'includes/class-ssm-navigation-admin.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-section-admin-page-data.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-section-admin-page-renderer.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-display.php';

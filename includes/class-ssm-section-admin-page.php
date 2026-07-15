@@ -25,9 +25,9 @@ final class SSM_Section_Admin_Page {
 	 */
 	private $section_menu_map = array();
 
-	public function __construct( SSM_Content $content ) {
+	public function __construct( SSM_Content $content, SSM_Navigation $navigation ) {
 		$this->content  = $content;
-		$this->data     = new SSM_Section_Admin_Page_Data();
+		$this->data     = new SSM_Section_Admin_Page_Data( $content, $navigation );
 		$this->renderer = new SSM_Section_Admin_Page_Renderer( $this->data );
 	}
 
@@ -75,8 +75,19 @@ final class SSM_Section_Admin_Page {
 
 		$wp_admin_bar->add_node(
 			array(
+				'id'    => 'ssm-admin-all',
+				'title' => '|&nbsp;&nbsp;' . __( 'All', 'site-section-manager' ),
+				'href'  => admin_url( 'admin.php?page=ssm-site-sections' ),
+				'meta'  => array(
+					'class' => $this->is_all_view() ? 'ssm-admin-bar-current' : '',
+				),
+			)
+		);
+
+		$wp_admin_bar->add_node(
+			array(
 				'id'    => 'ssm-admin-home',
-				'title' => '|&nbsp;&nbsp;' . __( 'Home', 'site-section-manager' ),
+				'title' => __( 'Home', 'site-section-manager' ),
 				'href'  => admin_url( 'admin.php?page=ssm-site-sections&section_id=0' ),
 				'meta'  => array(
 					'class' => $this->is_home_view() ? 'ssm-admin-bar-current' : '',
@@ -281,6 +292,14 @@ final class SSM_Section_Admin_Page {
 		}
 
 		if ( isset( $_GET['ssm_section_id'] ) && 0 === absint( $_GET['ssm_section_id'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private function is_all_view() {
+		if ( isset( $_GET['page'] ) && 'ssm-site-sections' === sanitize_key( wp_unslash( $_GET['page'] ) ) && ! isset( $_GET['section_id'] ) ) {
 			return true;
 		}
 

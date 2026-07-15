@@ -167,6 +167,10 @@ final class SSM_Content_Admin_Actions {
 		}
 
 		$taxonomy = isset( $query->query_vars['taxonomy'] ) ? $query->query_vars['taxonomy'] : '';
+		if ( is_array( $taxonomy ) ) {
+			$taxonomy = reset( $taxonomy );
+		}
+
 		if ( ! in_array( $taxonomy, array( 'category', 'post_tag' ), true ) ) {
 			$this->debug_log( 'filter_admin_term_queries ignored unsupported taxonomy', array( 'taxonomy' => $taxonomy ) );
 			return;
@@ -186,14 +190,67 @@ final class SSM_Content_Admin_Actions {
 			)
 		);
 
-		$query->set(
-			'meta_query',
-			array(
+		if ( 0 === $section_id ) {
+			$query->query_vars['meta_query'] = array(
+				'relation' => 'OR',
+				array(
+					'key'     => 'ssm_section_id',
+					'compare' => 'NOT EXISTS',
+				),
 				array(
 					'key'   => 'ssm_section_id',
-					'value' => $section_id,
+					'value' => 0,
 				),
-			)
+			);
+			return;
+		}
+
+		$query->query_vars['meta_query'] = array(
+			array(
+				'key'   => 'ssm_section_id',
+				'value' => $section_id,
+			),
+		);
+	}
+
+	public function register_term_bulk_actions( $actions ) {
+		$actions['ssm_set_section_0'] = __( 'Change Site Section to Home', 'site-section-manager' );
+
+		foreach ( $this->content->get_sections() as $section ) {
+			$actions[ 'ssm_set_section_' . (int) $section->ID ] = sprintf(
+				/* translators: %s: Section title. */
+				__( 'Change Site Section to %s', 'site-section-manager' ),
+				get_the_title( $section )
+			);
+		}
+
+		return $actions;
+	}
+
+	public function handle_term_bulk_actions( $redirect_to, $action, $term_ids ) {
+		if ( 0 !== strpos( (string) $action, 'ssm_set_section_' ) ) {
+			return $redirect_to;
+		}
+
+		$section_id = absint( substr( (string) $action, strlen( 'ssm_set_section_' ) ) );
+		$updated    = 0;
+
+		foreach ( (array) $term_ids as $term_id ) {
+			$term_id = absint( $term_id );
+			if ( ! $term_id || ! current_user_can( 'edit_term', $term_id ) ) {
+				continue;
+			}
+
+			update_term_meta( $term_id, 'ssm_section_id', $section_id );
+			$updated++;
+		}
+
+		return add_query_arg(
+			array(
+				'ssm_term_bulk_updated' => $updated,
+				'ssm_term_bulk_section' => $section_id,
+			),
+			$redirect_to
 		);
 	}
 
