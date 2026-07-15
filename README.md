@@ -23,5 +23,12 @@ Author: XanthiaJo & Codex
 
 - Edit the source files in the repo.
 - Run `.\build.ps1` to generate `dist\simple-section-manager.zip`.
-- The packaged plugin header version comes from `git describe`, not from a committed version bump.
+- The packaged plugin header version comes from conventional commits and the latest version tag, not from a committed version bump.
 - The working tree stays on `0.0.0-dev`; release versions are stamped only into the generated build.
+- Conventional commits drive the generated version:
+  - `feat:` bumps the minor version.
+  - `fix:` bumps the patch version.
+  - `BREAKING CHANGE:` or `!:` bumps the major version.
+  - Other commits increment the build revision when they are the only changes since the last release tag.
+- Run `.\release.ps1` to build, create the matching `vX.Y.Z` tag if needed, and rebuild the release package.
+- `release.ps1` expects a clean working tree.
