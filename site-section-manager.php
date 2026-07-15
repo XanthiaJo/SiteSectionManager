@@ -3,7 +3,7 @@
  * Plugin Name: Simple Section Manager
  * Description: Organize a single WordPress install into section-scoped pages, posts, categories, and tags without multisite.
  * Version: 0.0.0-dev
- * Author: XanthiaJo & Codex
+ * Author: XanthiaJo
  * Text Domain: site-section-manager
  */
 

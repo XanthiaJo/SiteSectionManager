@@ -2,7 +2,7 @@
 
 Skeleton WordPress plugin for organizing a single site into section-scoped content without multisite.
 
-Author: XanthiaJo & Codex
+Author: XanthiaJo
 
 ## What it adds
 
@@ -22,13 +22,17 @@ Author: XanthiaJo & Codex
 ## Build and release
 
 - Edit the source files in the repo.
-- Run `.\build.ps1` to generate `dist\simple-section-manager.zip`.
-- The packaged plugin header version comes from conventional commits and the latest version tag, not from a committed version bump.
-- The working tree stays on `0.0.0-dev`; release versions are stamped only into the generated build.
-- Conventional commits drive the generated version:
-  - `feat:` bumps the minor version.
-  - `fix:` bumps the patch version.
-  - `BREAKING CHANGE:` or `!:` bumps the major version.
-  - Other commits increment the build revision when they are the only changes since the last release tag.
+- Run `.\build.ps1` to generate `dist\site-section-manager.zip`.
+- The source plugin header stays at `0.0.0-dev`; release versions are stamped during packaging.
+- The packaged version comes from Conventional Commits and the latest `vX.Y.Z` tag.
+- `feat:` bumps the minor version.
+- `fix:` bumps the patch version.
+- `BREAKING CHANGE:` or `!:` bumps the major version.
+- Other non-breaking commits increment the revision segment when there is no newer release tag.
 - Run `.\release.ps1` to build, create the matching `vX.Y.Z` tag if needed, and rebuild the release package.
 - `release.ps1` expects a clean working tree.
+
+## Contributors
+
+- XanthiaJo
+- Codex

@@ -1,0 +1,98 @@
+.ssm-section-page .ssm-section-hero {
+	margin: 0 0 20px;
+	max-width: 960px;
+}
+
+.ssm-section-page .ssm-section-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	margin: 0 0 24px;
+}
+
+.ssm-section-page .ssm-section-card__header {
+	padding: 18px 20px 0;
+}
+
+.ssm-section-page .ssm-section-card__body {
+	padding: 0 20px 20px;
+}
+
+.ssm-section-page .ssm-section-card__body > *:first-child {
+	margin-top: 0;
+}
+
+.ssm-section-page .ssm-section-card__body > *:last-child {
+	margin-bottom: 0;
+}
+
+.ssm-section-page .ssm-section-form-grid {
+	display: grid;
+	gap: 16px;
+}
+
+.ssm-section-page .ssm-section-field label {
+	display: block;
+	margin: 0 0 6px;
+	font-weight: 600;
+}
+
+.ssm-section-page .ssm-section-field .regular-text,
+.ssm-section-page .ssm-section-field .large-text {
+	width: 100%;
+	max-width: 100%;
+}
+
+.ssm-section-page .ssm-section-field .large-text {
+	min-height: 160px;
+}
+
+.ssm-section-page .ssm-section-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.ssm-section-page .ssm-section-table {
+	margin-top: 0;
+}
+
+.ssm-section-page .ssm-section-dashboard {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 16px;
+	margin-bottom: 24px;
+	max-width: 960px;
+}
+
+.ssm-section-page .ssm-section-metrics {
+	padding: 0;
+}
+
+.ssm-section-page .ssm-section-metrics .inside {
+	padding: 16px 18px;
+}
+
+.ssm-section-page .ssm-section-backlink {
+	margin-left: auto;
+}
+
+@media (max-width: 782px) {
+	.ssm-section-page .ssm-section-card__header,
+	.ssm-section-page .ssm-section-card__body {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+
+	.ssm-section-page .ssm-section-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.ssm-section-page .ssm-section-actions .button {
+		width: 100%;
+		text-align: center;
+	}
+}

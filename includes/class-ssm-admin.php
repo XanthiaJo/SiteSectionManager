@@ -24,6 +24,10 @@ final class SSM_Admin {
 		$this->section_page->register_admin_menu();
 	}
 
+	public function enqueue_section_admin_assets() {
+		$this->section_page->enqueue_admin_assets();
+	}
+
 	public function hide_native_content_menus() {
 		$this->content_admin->hide_native_content_menus();
 	}

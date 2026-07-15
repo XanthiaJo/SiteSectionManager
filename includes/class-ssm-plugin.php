@@ -43,6 +43,7 @@ final class SSM_Plugin {
 
 		add_action( 'init', array( $this, 'register_content_types' ) );
 		add_action( 'init', array( $this->content, 'register_term_meta' ) );
+		add_action( 'admin_enqueue_scripts', array( $this->admin, 'enqueue_section_admin_assets' ) );
 		add_action( 'add_meta_boxes', array( $this->admin, 'register_meta_boxes' ) );
 		add_action( 'admin_init', array( $this->admin, 'register_term_form_fields' ) );
 		add_action( 'admin_menu', array( $this->admin, 'register_section_admin_page' ) );

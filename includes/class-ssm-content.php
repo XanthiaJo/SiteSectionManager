@@ -76,7 +76,7 @@ final class SSM_Content {
 				'posts_per_page'   => -1,
 				'orderby'          => 'title',
 				'order'            => 'ASC',
-				'suppress_filters' => false,
+				'suppress_filters' => true,
 			)
 		);
 	}

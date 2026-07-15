@@ -192,8 +192,9 @@ final class SSM_Content_Admin {
 
 	public function render_admin_post_filters() {
 		global $typenow;
+		global $pagenow;
 
-		if ( ! in_array( $typenow, array( 'post', 'page' ), true ) ) {
+		if ( 'edit.php' !== $pagenow || ! in_array( $typenow, array( 'post', 'page' ), true ) ) {
 			return;
 		}
 
@@ -239,7 +240,9 @@ final class SSM_Content_Admin {
 	}
 
 	public function filter_admin_post_queries( $query ) {
-		if ( ! is_admin() || ! $query->is_main_query() ) {
+		global $pagenow;
+
+		if ( ! is_admin() || 'edit.php' !== $pagenow || ! is_a( $query, 'WP_Query' ) || ! $query->is_main_query() ) {
 			return;
 		}
 
@@ -252,15 +255,13 @@ final class SSM_Content_Admin {
 			return;
 		}
 
-		$query->set(
-			'meta_query',
-			array(
-				array(
-					'key'   => '_ssm_section_id',
-					'value' => absint( $_GET['ssm_section_id'] ),
-				),
-			)
-		);
+		$section_ids = $this->get_section_post_ids( $post_type, absint( $_GET['ssm_section_id'] ) );
+		if ( empty( $section_ids ) ) {
+			$section_ids = array( 0 );
+		}
+
+		$query->set( 'post__in', $section_ids );
+		$query->set( 'orderby', 'post__in' );
 	}
 
 	public function filter_admin_term_queries( $query ) {
@@ -286,6 +287,69 @@ final class SSM_Content_Admin {
 				),
 			)
 		);
+	}
+
+	private function get_section_post_ids( $post_type, $section_id ) {
+		if ( 0 === (int) $section_id ) {
+			return $this->get_unsectioned_post_ids( $post_type );
+		}
+
+		$post_ids = get_posts(
+			array(
+				'post_type'              => $post_type,
+				'post_status'            => array( 'publish', 'draft', 'pending', 'private' ),
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+				'meta_query'             => array(
+					array(
+						'key'   => '_ssm_section_id',
+						'value' => (int) $section_id,
+					),
+				),
+				'suppress_filters'       => true,
+			)
+		);
+
+		if ( is_wp_error( $post_ids ) ) {
+			return array();
+		}
+
+		return array_map( 'absint', $post_ids );
+	}
+
+	private function get_unsectioned_post_ids( $post_type ) {
+		$post_ids = get_posts(
+			array(
+				'post_type'              => $post_type,
+				'post_status'            => array( 'publish', 'draft', 'pending', 'private' ),
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+				'meta_query'             => array(
+					'relation' => 'OR',
+					array(
+						'key'     => '_ssm_section_id',
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'   => '_ssm_section_id',
+						'value' => 0,
+					),
+				),
+				'suppress_filters'       => true,
+			)
+		);
+
+		if ( is_wp_error( $post_ids ) ) {
+			return array();
+		}
+
+		return array_map( 'absint', $post_ids );
 	}
 
 	public function add_term_section_column( $columns ) {

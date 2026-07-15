@@ -159,7 +159,7 @@ function Get-ReleaseVersion {
 }
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$packageName = 'simple-section-manager'
+$packageName = 'site-section-manager'
 $versionInfo = Get-ReleaseVersion
 $releaseVersion = Format-Version -Version $versionInfo.Version -Revision $versionInfo.Revision
 $gitDescribe = ((Invoke-Git -Arguments @('describe', '--tags', '--always', '--dirty')) -join '').Trim()
@@ -176,6 +176,7 @@ if (Test-Path $stageDir) {
 New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
 
 $itemsToCopy = @(
+	'assets',
 	'includes',
 	'README.md'
 )
