@@ -226,6 +226,10 @@ final class SSM_Navigation {
 	}
 
 	private function build_section_menu_items_markup( $section_id, $is_home ) {
+		if ( $is_home ) {
+			return $this->build_menu_items_markup();
+		}
+
 		$pages  = $this->content->get_section_content_items( 'page', $section_id, $is_home );
 		$markup = '';
 
