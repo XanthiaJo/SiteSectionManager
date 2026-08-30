@@ -189,6 +189,43 @@ final class SSM_Content {
 		return $items;
 	}
 
+	public function get_section_content_items( $post_type, $section_id, $is_home = false ) {
+		$args = array(
+			'post_type'              => $post_type,
+			'post_status'            => array( 'publish', 'draft', 'pending', 'private', 'future' ),
+			'posts_per_page'         => -1,
+			'orderby'                => 'title',
+			'order'                  => 'ASC',
+			'no_found_rows'          => true,
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+			'suppress_filters'       => true,
+		);
+
+		if ( $is_home ) {
+			$args['meta_query'] = array(
+				'relation' => 'OR',
+				array(
+					'key'     => '_ssm_section_id',
+					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key'   => '_ssm_section_id',
+					'value' => 0,
+				),
+			);
+		} else {
+			$args['meta_query'] = array(
+				array(
+					'key'   => '_ssm_section_id',
+					'value' => (int) $section_id,
+				),
+			);
+		}
+
+		return get_posts( $args );
+	}
+
 	private function get_default_home_url() {
 		$front_page_id = (int) get_option( 'page_on_front' );
 		if ( $front_page_id > 0 ) {

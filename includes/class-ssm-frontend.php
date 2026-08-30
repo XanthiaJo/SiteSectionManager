@@ -68,6 +68,19 @@ final class SSM_Frontend {
 		<?php
 	}
 
+	public function filter_bloginfo( $output, $show ) {
+		if ( is_admin() || 'name' !== $show ) {
+			return $output;
+		}
+
+		$section_title = $this->get_current_section_title();
+		if ( '' === $section_title ) {
+			return $output;
+		}
+
+		return $section_title;
+	}
+
 	private function get_current_section_id() {
 		if ( is_singular( 'site_section' ) ) {
 			return (int) get_the_ID();
@@ -79,5 +92,19 @@ final class SSM_Frontend {
 		}
 
 		return (int) get_post_meta( $post_id, '_ssm_section_id', true );
+	}
+
+	private function get_current_section_title() {
+		$section_id = $this->get_current_section_id();
+		if ( 0 === $section_id ) {
+			return __( 'Home', 'site-section-manager' );
+		}
+
+		$section = get_post( $section_id );
+		if ( ! $section || 'site_section' !== $section->post_type ) {
+			return '';
+		}
+
+		return get_the_title( $section );
 	}
 }

@@ -8,7 +8,9 @@ final class SSM_Navigation {
 	const MENU_LOCATION = 'ssm-global-sections';
 	const OPTION_THEME_MENU_LOCATION = 'ssm_theme_menu_location';
 	const OPTION_HOME_MENU_ID = 'ssm_home_menu_id';
+	const OPTION_HOME_MENU_AUTO = 'ssm_home_menu_auto';
 	const SECTION_MENU_META_KEY = '_ssm_nav_menu_id';
+	const SECTION_MENU_AUTO_META_KEY = '_ssm_nav_menu_auto';
 
 	/**
 	 * @var SSM_Content
@@ -34,6 +36,13 @@ final class SSM_Navigation {
 		$location = (string) get_option( self::OPTION_THEME_MENU_LOCATION, '' );
 		if ( self::MENU_LOCATION === $location ) {
 			return '';
+		}
+
+		if ( '' === $location ) {
+			$locations = $this->get_available_theme_locations();
+			if ( isset( $locations['primary'] ) ) {
+				return 'primary';
+			}
 		}
 
 		return $location;
@@ -73,8 +82,9 @@ final class SSM_Navigation {
 		$menu    = $menu_id ? wp_get_nav_menu_object( $menu_id ) : false;
 		$name    = $this->get_section_menu_name( $section_id, $section_title ? $section_title : get_the_title( $section_id ) );
 
-		if ( $menu && ! is_wp_error( $menu ) ) {
+		if ( $menu && ! is_wp_error( $menu ) && ! $this->is_menu_claimed_by_another_section( $menu->term_id, $section_id ) ) {
 			$this->sync_menu_name( $menu->term_id, $name );
+			$this->ensure_section_menu_has_home_item( $menu->term_id, $section_id );
 			return (int) $menu->term_id;
 		}
 
@@ -84,6 +94,8 @@ final class SSM_Navigation {
 		}
 
 		update_post_meta( $section_id, self::SECTION_MENU_META_KEY, (int) $menu_id );
+		$this->ensure_section_menu_has_home_item( $menu_id, $section_id );
+
 		return (int) $menu_id;
 	}
 
@@ -113,6 +125,24 @@ final class SSM_Navigation {
 		return is_array( $items ) ? $items : array();
 	}
 
+	public function is_section_menu_auto( $section_id, $is_home = false ) {
+		if ( $is_home ) {
+			return '0' !== (string) get_option( self::OPTION_HOME_MENU_AUTO, '1' );
+		}
+
+		$value = get_post_meta( $section_id, self::SECTION_MENU_AUTO_META_KEY, true );
+		return '' === $value || '0' !== (string) $value;
+	}
+
+	public function update_section_menu_auto( $section_id, $is_home, $enabled ) {
+		if ( $is_home ) {
+			update_option( self::OPTION_HOME_MENU_AUTO, $enabled ? '1' : '0', false );
+			return;
+		}
+
+		update_post_meta( $section_id, self::SECTION_MENU_AUTO_META_KEY, $enabled ? '1' : '0' );
+	}
+
 	public function should_render_fallback_header() {
 		return '' === $this->get_selected_theme_location();
 	}
@@ -126,6 +156,8 @@ final class SSM_Navigation {
 		if ( '' === $selected_location || $selected_location !== $args['theme_location'] ) {
 			return $args;
 		}
+
+		$args['fallback_cb'] = false;
 
 		$menu_id = $this->get_current_section_menu_id();
 		if ( ! $menu_id ) {
@@ -143,10 +175,25 @@ final class SSM_Navigation {
 		}
 
 		if ( self::MENU_LOCATION !== $args->theme_location ) {
-			return $items;
+			return $this->filter_section_theme_menu_items( $items, $args );
 		}
 
 		return $this->build_menu_items_markup();
+	}
+
+	private function filter_section_theme_menu_items( $items, $args ) {
+		$selected_location = $this->get_selected_theme_location();
+		if ( '' === $selected_location || $selected_location !== $args->theme_location ) {
+			return $items;
+		}
+
+		$section_id = $this->get_current_section_id();
+		$is_home    = 0 === (int) $section_id;
+		if ( ! $this->is_section_menu_auto( $section_id, $is_home ) ) {
+			return $items;
+		}
+
+		return $this->build_section_menu_items_markup( $section_id, $is_home );
 	}
 
 	private function build_menu_items_markup() {
@@ -178,6 +225,34 @@ final class SSM_Navigation {
 		return $markup;
 	}
 
+	private function build_section_menu_items_markup( $section_id, $is_home ) {
+		$pages  = $this->content->get_section_content_items( 'page', $section_id, $is_home );
+		$markup = '';
+
+		foreach ( $pages as $page ) {
+			$classes = array(
+				'menu-item',
+				'menu-item-type-post_type',
+				'menu-item-object-page',
+				'menu-item-' . (int) $page->ID,
+			);
+
+			if ( is_page( $page->ID ) ) {
+				$classes[] = 'current-menu-item';
+				$classes[] = 'current_page_item';
+			}
+
+			$markup .= sprintf(
+				'<li class="%1$s"><a href="%2$s">%3$s</a></li>',
+				esc_attr( implode( ' ', $classes ) ),
+				esc_url( get_permalink( $page ) ),
+				esc_html( get_the_title( $page ) ? get_the_title( $page ) : __( '(no title)', 'site-section-manager' ) )
+			);
+		}
+
+		return $markup;
+	}
+
 	private function sync_menu_name( $menu_id, $name ) {
 		$menu = wp_get_nav_menu_object( $menu_id );
 		if ( ! $menu || is_wp_error( $menu ) || $menu->name === $name ) {
@@ -188,6 +263,43 @@ final class SSM_Navigation {
 			$menu_id,
 			array(
 				'menu-name' => $name,
+			)
+		);
+	}
+
+	private function is_menu_claimed_by_another_section( $menu_id, $section_id ) {
+		foreach ( $this->content->get_sections() as $section ) {
+			if ( (int) $section->ID === (int) $section_id ) {
+				continue;
+			}
+
+			if ( (int) get_post_meta( $section->ID, self::SECTION_MENU_META_KEY, true ) === (int) $menu_id ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function ensure_section_menu_has_home_item( $menu_id, $section_id ) {
+		if ( ! empty( $this->get_menu_items( $menu_id ) ) ) {
+			return;
+		}
+
+		$home_page_id = $this->content->get_section_home_page_id( $section_id );
+		if ( ! $home_page_id ) {
+			return;
+		}
+
+		wp_update_nav_menu_item(
+			$menu_id,
+			0,
+			array(
+				'menu-item-object-id' => $home_page_id,
+				'menu-item-object'    => 'page',
+				'menu-item-title'     => __( 'Home', 'site-section-manager' ),
+				'menu-item-status'    => 'publish',
+				'menu-item-type'      => 'post_type',
 			)
 		);
 	}

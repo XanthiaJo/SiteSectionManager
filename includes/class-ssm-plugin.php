@@ -62,6 +62,7 @@ final class SSM_Plugin {
 		add_action( 'wp_enqueue_scripts', array( $this->frontend, 'enqueue_assets' ) );
 		add_action( 'wp_body_open', array( $this->frontend, 'render_global_header' ) );
 		add_action( 'wp_footer', array( $this->frontend, 'render_global_header' ), 1 );
+		add_filter( 'bloginfo', array( $this->frontend, 'filter_bloginfo' ), 10, 2 );
 		add_filter( 'wp_nav_menu_args', array( $this->navigation, 'filter_nav_menu_args' ) );
 		add_filter( 'wp_nav_menu_items', array( $this->navigation, 'filter_nav_menu_items' ), 10, 2 );
 		add_action( 'add_meta_boxes', array( $this->admin, 'register_meta_boxes' ) );

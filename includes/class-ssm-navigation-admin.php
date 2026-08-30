@@ -29,14 +29,14 @@ final class SSM_Navigation_Admin {
 					<div class="ssm-section-field">
 						<label for="ssm_theme_menu_location"><?php esc_html_e( 'Theme menu location', 'site-section-manager' ); ?></label>
 						<select id="ssm_theme_menu_location" name="ssm_theme_menu_location">
-							<option value=""><?php esc_html_e( 'Use plugin fallback header', 'site-section-manager' ); ?></option>
+							<option value=""><?php esc_html_e( 'Auto-detect primary menu', 'site-section-manager' ); ?></option>
 							<?php foreach ( $locations as $location => $label ) : ?>
 								<option value="<?php echo esc_attr( $location ); ?>" <?php selected( $selected_location, $location ); ?>>
 									<?php echo esc_html( $label . ' (' . $location . ')' ); ?>
 								</option>
 							<?php endforeach; ?>
 						</select>
-						<p class="description"><?php esc_html_e( 'When selected, this menu location will be populated automatically from your section titles. Leave it blank to keep using the plugin header bar.', 'site-section-manager' ); ?></p>
+						<p class="description"><?php esc_html_e( 'This theme menu location will render the current section menu. The thin plugin header always shows all section titles.', 'site-section-manager' ); ?></p>
 					</div>
 					<div class="ssm-section-actions">
 						<?php submit_button( __( 'Save Menu Settings', 'site-section-manager' ), 'secondary', 'submit', false ); ?>
@@ -58,37 +58,42 @@ final class SSM_Navigation_Admin {
 		$section_id = isset( $_POST['section_id'] ) ? (int) wp_unslash( $_POST['section_id'] ) : 0;
 		$is_home    = ! empty( $_POST['is_home'] );
 		$menu_id    = $is_home ? $this->navigation->get_home_menu_id() : $this->navigation->get_section_menu_id( $section_id );
+		$auto_menu  = ! empty( $_POST['ssm_auto_menu'] );
 		$item_ids   = isset( $_POST['menu_item_id'] ) ? (array) wp_unslash( $_POST['menu_item_id'] ) : array();
 		$labels     = isset( $_POST['menu_item_label'] ) ? (array) wp_unslash( $_POST['menu_item_label'] ) : array();
 		$urls       = isset( $_POST['menu_item_url'] ) ? (array) wp_unslash( $_POST['menu_item_url'] ) : array();
 		$deletes    = isset( $_POST['menu_item_delete'] ) ? (array) wp_unslash( $_POST['menu_item_delete'] ) : array();
 		$total      = max( count( $item_ids ), count( $labels ), count( $urls ) );
 
-		for ( $index = 0; $index < $total; $index++ ) {
-			$item_id = isset( $item_ids[ $index ] ) ? (int) $item_ids[ $index ] : 0;
-			$label   = isset( $labels[ $index ] ) ? sanitize_text_field( $labels[ $index ] ) : '';
-			$url     = isset( $urls[ $index ] ) ? esc_url_raw( $urls[ $index ] ) : '';
-			$delete  = isset( $deletes[ $index ] ) && '1' === (string) $deletes[ $index ];
+		$this->navigation->update_section_menu_auto( $section_id, $is_home, $auto_menu );
 
-			if ( $item_id && $delete ) {
-				wp_delete_post( $item_id, true );
-				continue;
+		if ( ! $auto_menu ) {
+			for ( $index = 0; $index < $total; $index++ ) {
+				$item_id = isset( $item_ids[ $index ] ) ? (int) $item_ids[ $index ] : 0;
+				$label   = isset( $labels[ $index ] ) ? sanitize_text_field( $labels[ $index ] ) : '';
+				$url     = isset( $urls[ $index ] ) ? esc_url_raw( $urls[ $index ] ) : '';
+				$delete  = isset( $deletes[ $index ] ) && '1' === (string) $deletes[ $index ];
+
+				if ( $item_id && $delete ) {
+					wp_delete_post( $item_id, true );
+					continue;
+				}
+
+				if ( '' === $label || '' === $url ) {
+					continue;
+				}
+
+				wp_update_nav_menu_item(
+					$menu_id,
+					$item_id,
+					array(
+						'menu-item-title'  => $label,
+						'menu-item-url'    => $url,
+						'menu-item-status' => 'publish',
+						'menu-item-type'   => 'custom',
+					)
+				);
 			}
-
-			if ( '' === $label || '' === $url ) {
-				continue;
-			}
-
-			wp_update_nav_menu_item(
-				$menu_id,
-				$item_id,
-				array(
-					'menu-item-title'  => $label,
-					'menu-item-url'    => $url,
-					'menu-item-status' => 'publish',
-					'menu-item-type'   => 'custom',
-				)
-			);
 		}
 
 		$redirect_url = $is_home

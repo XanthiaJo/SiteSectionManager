@@ -168,43 +168,15 @@ final class SSM_Section_Admin_Page_Data {
 	}
 
 	public function get_section_content_items( $post_type, $section_id, $is_home = false ) {
-		$args = array(
-			'post_type'              => $post_type,
-			'post_status'            => array( 'publish', 'draft', 'pending', 'private', 'future' ),
-			'posts_per_page'         => -1,
-			'orderby'                => 'title',
-			'order'                  => 'ASC',
-			'no_found_rows'          => true,
-			'update_post_meta_cache' => false,
-			'update_post_term_cache' => false,
-		);
-
-		if ( $is_home ) {
-			$args['meta_query'] = array(
-				'relation' => 'OR',
-				array(
-					'key'     => '_ssm_section_id',
-					'compare' => 'NOT EXISTS',
-				),
-				array(
-					'key'   => '_ssm_section_id',
-					'value' => 0,
-				),
-			);
-		} else {
-			$args['meta_query'] = array(
-				array(
-					'key'   => '_ssm_section_id',
-					'value' => (int) $section_id,
-				),
-			);
-		}
-
-		return get_posts( $args );
+		return $this->content->get_section_content_items( $post_type, $section_id, $is_home );
 	}
 
 	public function get_menu_items( $menu_id ) {
 		return $this->navigation->get_menu_items( $menu_id );
+	}
+
+	public function is_section_menu_auto( $section_id, $is_home = false ) {
+		return $this->navigation->is_section_menu_auto( $section_id, $is_home );
 	}
 
 	public function get_delete_link( $section_id ) {

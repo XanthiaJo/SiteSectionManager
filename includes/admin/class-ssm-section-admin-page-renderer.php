@@ -108,6 +108,7 @@ final class SSM_Section_Admin_Page_Renderer {
 		$menu_link        = $summary->menu_link;
 		$menu_id          = $summary->menu_id;
 		$menu_items       = $this->data->get_menu_items( $menu_id );
+		$auto_menu        = $this->data->is_section_menu_auto( $section_id, $is_home );
 		?>
 		<div class="ssm-section-workspace">
 			<div class="ssm-section-workspace__top">
@@ -149,6 +150,10 @@ final class SSM_Section_Admin_Page_Renderer {
 							<input type="hidden" name="section_id" value="<?php echo esc_attr( $section_id ); ?>" />
 							<input type="hidden" name="is_home" value="<?php echo esc_attr( $is_home ? '1' : '0' ); ?>" />
 							<?php wp_nonce_field( 'ssm_save_section_menu' ); ?>
+							<label class="ssm-section-menu-auto">
+								<input type="checkbox" name="ssm_auto_menu" value="1" <?php checked( $auto_menu ); ?> />
+								<?php esc_html_e( 'Automatically generate this section menu from section pages', 'site-section-manager' ); ?>
+							</label>
 							<div class="ssm-section-menu-editor">
 								<?php foreach ( $menu_items as $index => $item ) : ?>
 									<div class="ssm-section-menu-row">
@@ -166,7 +171,7 @@ final class SSM_Section_Admin_Page_Renderer {
 									<span class="description"><?php esc_html_e( 'Add one link', 'site-section-manager' ); ?></span>
 								</div>
 							</div>
-							<p class="description"><?php esc_html_e( 'Use this panel for simple link edits. Open the full Menus screen for advanced item types.', 'site-section-manager' ); ?></p>
+							<p class="description"><?php esc_html_e( 'When auto-generation is enabled, the theme menu renders this section\'s pages. Turn it off to use the saved manual menu links.', 'site-section-manager' ); ?></p>
 						<div class="ssm-section-actions">
 								<?php submit_button( __( 'Save Menu', 'site-section-manager' ), 'secondary', 'submit', false ); ?>
 							<a class="button button-primary" href="<?php echo esc_url( $menu_link ); ?>"><?php esc_html_e( 'Edit Menu', 'site-section-manager' ); ?></a>
