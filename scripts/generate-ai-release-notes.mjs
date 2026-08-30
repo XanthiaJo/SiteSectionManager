@@ -160,7 +160,14 @@ async function generateNotes(commits) {
 
   const payload = await response.json();
   const text = payload.choices?.[0]?.message?.content || '';
-  const parsed = JSON.parse(text);
+
+  // Some OpenRouter models prepend safety annotations or prose before the
+  // JSON object. Extract the first {...} block and parse that.
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error(`OpenRouter response did not contain a JSON object: ${text.slice(0, 200)}`);
+  }
+  const parsed = JSON.parse(jsonMatch[0]);
 
   if (!parsed || !Array.isArray(parsed.notes)) {
     throw new Error('OpenRouter response did not contain a notes array');
