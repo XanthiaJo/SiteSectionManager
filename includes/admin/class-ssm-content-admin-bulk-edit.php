@@ -96,8 +96,9 @@ final class SSM_Content_Admin_Bulk_Edit {
 
 	public function output_quick_edit_script() {
 		global $current_screen;
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
-		if ( ! isset( $current_screen->base ) || 'edit' !== $current_screen->base || ! in_array( $current_screen->post_type, array( 'post', 'page' ), true ) ) {
+		if ( ! isset( $current_screen->base ) || ( 'edit' !== $current_screen->base && 0 !== strpos( $page, 'ssm-site-section' ) ) ) {
 			return;
 		}
 

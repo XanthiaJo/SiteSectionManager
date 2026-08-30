@@ -86,7 +86,7 @@ final class SSM_Plugin {
 		add_action( 'bulk_edit_custom_box', array( $this->admin, 'render_bulk_edit_section_field' ), 10, 2 );
 		add_action( 'quick_edit_custom_box', array( $this->admin, 'render_quick_edit_section_field' ), 10, 3 );
 		add_action( 'quick_edit_custom_box', array( $this->admin, 'render_term_quick_edit_section_field' ), 10, 3 );
-		add_action( 'admin_footer-edit.php', array( $this->admin, 'output_quick_edit_script' ) );
+		add_action( 'admin_footer', array( $this->admin, 'output_quick_edit_script' ) );
 		add_action( 'admin_footer-edit-tags.php', array( $this->admin, 'output_term_quick_edit_script' ) );
 		add_action( 'bulk_edit_posts', array( $this->admin, 'save_bulk_edit_sections' ), 10, 2 );
 		add_action( 'save_post', array( $this->admin, 'save_quick_edit_section' ), 20, 2 );

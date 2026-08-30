@@ -104,11 +104,10 @@ final class SSM_Section_Admin_Page_Renderer {
 		$section_title    = 'unsectioned' === $view_type ? __( 'Home', 'site-section-manager' ) : get_the_title( $section );
 		$section_slug_arg = 'unsectioned' === $view_type ? 0 : $section_id;
 		$is_home          = 'unsectioned' === $view_type;
-		$menu_link        = $is_home ? $this->data->get_unsectioned_summary()->menu_link : $this->data->get_section_summary( $section )->menu_link;
-		$menu_id          = $is_home ? $this->data->get_unsectioned_summary()->menu_id : $this->data->get_section_summary( $section )->menu_id;
+		$summary          = $is_home ? $this->data->get_unsectioned_summary() : $this->data->get_section_summary( $section );
+		$menu_link        = $summary->menu_link;
+		$menu_id          = $summary->menu_id;
 		$menu_items       = $this->data->get_menu_items( $menu_id );
-		$pages            = $this->data->get_section_content_items( 'page', $section_id, $is_home );
-		$posts            = $this->data->get_section_content_items( 'post', $section_id, $is_home );
 		?>
 		<div class="ssm-section-workspace">
 			<div class="ssm-section-workspace__top">
@@ -176,8 +175,8 @@ final class SSM_Section_Admin_Page_Renderer {
 					</div>
 				</div>
 			</div>
-			<?php $this->render_section_content_table( __( 'Pages', 'site-section-manager' ), 'page', $pages, $section_id, $is_home ); ?>
-			<?php $this->render_section_content_table( __( 'Posts', 'site-section-manager' ), 'post', $posts, $section_id, $is_home ); ?>
+			<?php $this->render_section_content_table( __( 'Pages', 'site-section-manager' ), 'page', $section_id, $is_home ); ?>
+			<?php $this->render_section_content_table( __( 'Posts', 'site-section-manager' ), 'post', $section_id, $is_home ); ?>
 		</div>
 		<?php
 	}
@@ -207,13 +206,15 @@ final class SSM_Section_Admin_Page_Renderer {
 		<?php
 	}
 
-	private function render_section_content_table( $label, $post_type, array $items, $section_id, $is_home ) {
+	private function render_section_content_table( $label, $post_type, $section_id, $is_home ) {
 		$list_link = $is_home
 			? admin_url( 'edit.php?post_type=' . $post_type . '&ssm_section_id=0' )
 			: admin_url( 'edit.php?post_type=' . $post_type . '&ssm_section_id=' . $section_id );
 		$create_link = $is_home
 			? admin_url( 'post-new.php?post_type=' . $post_type )
 			: admin_url( 'post-new.php?post_type=' . $post_type . '&ssm_section_id=' . $section_id );
+		$table = new SSM_Section_Posts_List_Table( $post_type, $section_id, $is_home );
+		$table->prepare_items();
 		?>
 		<div class="ssm-section-card">
 			<div class="ssm-section-card__header ssm-section-card__header--table">
@@ -224,30 +225,13 @@ final class SSM_Section_Admin_Page_Renderer {
 				</div>
 			</div>
 			<div class="ssm-section-card__body">
-				<table class="widefat striped">
-					<thead>
-						<tr>
-							<th><?php esc_html_e( 'Title', 'site-section-manager' ); ?></th>
-							<th><?php esc_html_e( 'Status', 'site-section-manager' ); ?></th>
-							<th><?php esc_html_e( 'Date', 'site-section-manager' ); ?></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php if ( empty( $items ) ) : ?>
-							<tr>
-								<td colspan="3"><?php esc_html_e( 'No items found.', 'site-section-manager' ); ?></td>
-							</tr>
-						<?php else : ?>
-							<?php foreach ( $items as $item ) : ?>
-								<tr>
-									<td><a href="<?php echo esc_url( get_edit_post_link( $item->ID ) ); ?>"><?php echo esc_html( get_the_title( $item ) ? get_the_title( $item ) : __( '(no title)', 'site-section-manager' ) ); ?></a></td>
-									<td><?php echo esc_html( ucfirst( get_post_status( $item ) ) ); ?></td>
-									<td><?php echo esc_html( get_the_date( '', $item ) ); ?></td>
-								</tr>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</tbody>
-				</table>
+				<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+					<input type="hidden" name="page" value="<?php echo esc_attr( $is_home ? 'ssm-site-sections' : 'ssm-site-section-' . $section_id ); ?>" />
+					<input type="hidden" name="section_id" value="<?php echo esc_attr( $is_home ? 0 : $section_id ); ?>" />
+					<input type="hidden" name="post_type" value="<?php echo esc_attr( $post_type ); ?>" />
+					<input type="hidden" name="<?php echo esc_attr( 'ssm_' . $post_type . '_paged' ); ?>" value="<?php echo esc_attr( $table->get_pagenum() ); ?>" />
+					<?php $table->display(); ?>
+				</form>
 			</div>
 		</div>
 		<?php

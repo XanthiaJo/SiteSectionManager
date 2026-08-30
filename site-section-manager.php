@@ -24,6 +24,7 @@ require_once SSM_PATH . 'includes/class-ssm-navigation.php';
 require_once SSM_PATH . 'includes/class-ssm-navigation-admin.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-section-admin-page-data.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-section-admin-page-renderer.php';
+require_once SSM_PATH . 'includes/admin/class-ssm-section-posts-list-table.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-display.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-actions.php';
 require_once SSM_PATH . 'includes/admin/class-ssm-content-admin-bulk-edit.php';
