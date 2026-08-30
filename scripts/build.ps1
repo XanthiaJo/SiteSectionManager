@@ -156,7 +156,7 @@ function Get-ReleaseVersion {
 	}
 }
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $packageName = 'site-section-manager'
 $versionInfo = Get-ReleaseVersion
 $releaseVersion = Format-Version -Version $versionInfo.Version

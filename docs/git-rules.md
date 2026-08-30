@@ -82,19 +82,19 @@ when no release-worthy commits are found.
 
 ### Local scripts (manual packaging)
 
-- `build.ps1` packages the plugin for local testing. It derives the version
+- `scripts/build.ps1` packages the plugin for local testing. It derives the version
   from conventional commits and stamps it in the plugin header. It works on
   a dirty working tree.
-- `release.ps1` is the stricter local release flow. It requires a clean
+- `scripts/release.ps1` is the stricter local release flow. It requires a clean
   working tree and creates the matching git tag.
 - `npm run release-notes:ai`, `npm run release-plan`, and `npm run package`
   are Node.js equivalents used by the GitHub Actions workflow.
 
 ## Dirty Working Trees
 
-- `build.ps1` is allowed to run on a dirty working tree.
+- `scripts/build.ps1` is allowed to run on a dirty working tree.
 - This is the expected path for manual packaging while iterating locally.
-- `release.ps1` is different: it creates or validates release tags, so it still requires a clean tree.
+- `scripts/release.ps1` is different: it creates or validates release tags, so it still requires a clean tree.
 
 ## Tagging
 
@@ -105,7 +105,7 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-A tag pins the release version. `release.ps1` can create the matching tag automatically when the tree is clean.
+A tag pins the release version. `scripts/release.ps1` can create the matching tag automatically when the tree is clean.
 
 ## Scopes
 

@@ -1,7 +1,7 @@
 /**
  * Package the Site Section Manager plugin into a distributable zip.
  *
- * Replicates the logic of build.ps1 in Node.js so it can run in a
+ * Replicates the logic of scripts/build.ps1 in Node.js so it can run in a
  * cross-platform GitHub Actions environment.
  *
  * Steps:

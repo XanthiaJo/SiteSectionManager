@@ -114,8 +114,8 @@ Required repository secrets/variables:
 
 ### Local scripts (manual packaging)
 
-- Build script: [build.ps1](E:/CodingProjects/site-section-manager/build.ps1) — works on a dirty working tree.
-- Release script: [release.ps1](E:/CodingProjects/site-section-manager/release.ps1) — requires a clean working tree, creates tags.
+- Build script: [scripts/build.ps1](E:/CodingProjects/site-section-manager/scripts/build.ps1) — works on a dirty working tree.
+- Release script: [scripts/release.ps1](E:/CodingProjects/site-section-manager/scripts/release.ps1) — requires a clean working tree, creates tags.
 - Node.js scripts (used by the workflow, also runnable locally):
   - `npm run release-notes:ai` — generate AI release notes (needs `OPENROUTER_API_KEY`).
   - `npm run release-plan` — plan the next release tag and notes.

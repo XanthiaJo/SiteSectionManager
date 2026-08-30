@@ -20,7 +20,7 @@ function Get-ReleaseVersionFromOutput {
 	throw 'Could not determine release version from build output.'
 }
 
-$repoRoot = $PSScriptRoot
+$repoRoot = Split-Path -Parent $PSScriptRoot
 $status = @(git -C $repoRoot status --short)
 if ($status.Count -gt 0) {
 	throw "Working tree is dirty. Commit or stash changes before creating a release.`n$($status -join [Environment]::NewLine)"
