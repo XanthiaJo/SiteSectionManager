@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force a patch release even if no release-worthy commits are found'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.plan.outputs.release_tag }}
+      should_release: ${{ steps.plan.outputs.should_release }}
+      notes_path: ${{ steps.plan.outputs.notes_path }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install zip utility
+        run: sudo apt-get update && sudo apt-get install -y zip
+
+      - name: Generate AI release notes
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL || 'openrouter/free' }}
+        run: node scripts/generate-ai-release-notes.mjs --root=. --output=release-notes.ai.json
+
+      - name: Plan release
+        id: plan
+        env:
+          FORCE_RELEASE: ${{ github.event.inputs.force_release }}
+        run: |
+          node scripts/release-plan.mjs --root=. \
+            --notes=.github/release-notes.md \
+            --json=.github/release-plan.json
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const plan = JSON.parse(fs.readFileSync('.github/release-plan.json', 'utf8'));
+          const forceRelease = process.env.FORCE_RELEASE === 'true';
+
+          let releaseTag = plan.releaseTag || '';
+          let shouldRelease = plan.shouldRelease || forceRelease;
+
+          if (forceRelease && !plan.shouldRelease && plan.latestVersion) {
+            // Force a patch bump on top of the latest tag.
+            const [major, minor, patch] = plan.latestVersion.replace(/^v/, '').split('.').map(Number);
+            releaseTag = `v${major}.${minor}.${patch + 1}`;
+            plan.releaseTag = releaseTag;
+            plan.shouldRelease = true;
+            plan.bumpType = 'patch';
+            plan.reason = 'Forced patch release.';
+            fs.writeFileSync('.github/release-plan.json', JSON.stringify(plan, null, 2) + '\n', 'utf8');
+          }
+
+          const output = process.env.GITHUB_OUTPUT;
+          fs.appendFileSync(output, `release_tag=${releaseTag}\n`);
+          fs.appendFileSync(output, `should_release=${shouldRelease}\n`);
+          fs.appendFileSync(output, `notes_path=${plan.notesPath}\n`);
+          NODE
+
+      - name: Create tag
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG already exists locally."
+            exit 0
+          fi
+          git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+
+      - name: Package WordPress plugin
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+        run: |
+          node scripts/package-plugin.mjs --root=. --output-dir=dist --version="${RELEASE_TAG#v}"
+
+      - name: Create GitHub release and upload plugin zip
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+          NOTES_PATH: ${{ steps.plan.outputs.notes_path }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="$RELEASE_TAG"
+          zipPath="dist/site-section-manager.zip"
+          assetName="site-section-manager-${tag#v}.zip"
+
+          if [ -f "$zipPath" ]; then
+            cp "$zipPath" "$assetName"
+          fi
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists."
+            if [ -f "$assetName" ]; then
+              gh release upload "$tag" "$assetName" --clobber
+            fi
+          else
+            if [ -f "$assetName" ]; then
+              gh release create "$tag" "$assetName" \
+                --title "$tag" \
+                --notes-file "$NOTES_PATH"
+            else
+              gh release create "$tag" \
+                --title "$tag" \
+                --notes-file "$NOTES_PATH"
+            fi
+          fi
+
+      - name: Report no release
+        if: steps.plan.outputs.should_release != 'true'
+        run: |
+          echo "No release-worthy changes found since the last tag."
+          echo "To force a release, re-run this workflow with the 'force_release' input enabled."
+          cat .github/release-notes.md

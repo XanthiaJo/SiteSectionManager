@@ -93,23 +93,45 @@ This project uses Conventional Commits to derive packaged release versions.
 
 - Source plugin version stays `0.0.0-dev`.
 - Built package version is stamped during packaging.
-- Build script: [build.ps1](E:/CodingProjects/site-section-manager/build.ps1)
-- Release script: [release.ps1](E:/CodingProjects/site-section-manager/release.ps1)
 - Release docs: [docs/git-rules.md](E:/CodingProjects/site-section-manager/docs/git-rules.md)
 
-Practical usage:
+### GitHub Actions release (primary path)
 
-- `build.ps1` is expected to work on a dirty working tree and is the normal manual test-packaging flow.
-- `release.ps1` is the stricter release flow and requires a clean working tree because it creates or reuses release tags.
+The release workflow at [.github/workflows/release.yml](E:/CodingProjects/site-section-manager/.github/workflows/release.yml)
+is triggered **manually** via `workflow_dispatch`, not on push. It:
 
-Versioning rules in practice:
+1. Generates AI-rewritten release notes from commit messages using OpenRouter (`scripts/generate-ai-release-notes.mjs`).
+2. Plans the next semver tag from Conventional Commits (`scripts/release-plan.mjs`).
+3. Creates the git tag and GitHub Release with the generated notes.
+4. Packages the plugin into a zip (`scripts/package-plugin.mjs`) and uploads it as a release asset.
+
+The workflow accepts a `force_release` input to force a patch release even when
+no release-worthy commits are found.
+
+Required repository secrets/variables:
+- `OPENROUTER_API_KEY` (secret) — API key for the AI release-note rewrite.
+- `OPENROUTER_MODEL` (variable, optional) — model name, defaults to `openrouter/free`.
+
+### Local scripts (manual packaging)
+
+- Build script: [build.ps1](E:/CodingProjects/site-section-manager/build.ps1) — works on a dirty working tree.
+- Release script: [release.ps1](E:/CodingProjects/site-section-manager/release.ps1) — requires a clean working tree, creates tags.
+- Node.js scripts (used by the workflow, also runnable locally):
+  - `npm run release-notes:ai` — generate AI release notes (needs `OPENROUTER_API_KEY`).
+  - `npm run release-plan` — plan the next release tag and notes.
+  - `npm run package` — package the plugin zip into `dist/`.
+
+### Versioning rules
+
+Pure 3-segment semver (`vX.Y.Z`):
 
 - `feat:` bumps minor
 - `fix:` bumps patch
 - breaking change bumps major
-- `docs`, `refactor`, `chore`, `test` and similar non-breaking commits bump the revision segment when applicable
+- `docs`, `refactor`, `chore`, `test` and similar non-breaking commits do **not** trigger a release
 
 Generated release output in `dist/` should not be committed.
+Generated release artifacts (`release-notes.ai.json`, `.github/release-notes.md`, `.github/release-plan.json`) are gitignored.
 
 ## Repository and Naming
 

@@ -55,13 +55,8 @@ function Try-ParseVersionTag {
 function Format-Version {
 	param(
 		[Parameter(Mandatory = $true)]
-		[System.Version]$Version,
-		[int]$Revision = 0
+		[System.Version]$Version
 	)
-
-	if ($Revision -gt 0) {
-		return ('{0}.{1}.{2}.{3}' -f $Version.Major, $Version.Minor, $Version.Build, $Revision)
-	}
 
 	return ('{0}.{1}.{2}' -f $Version.Major, $Version.Minor, $Version.Build)
 }
@@ -107,7 +102,6 @@ function Get-LatestTaggedVersion {
 function Get-ReleaseVersion {
 	$latestTagInfo = Get-LatestTaggedVersion
 	$baseVersion = if ($null -ne $latestTagInfo) { $latestTagInfo.Version } else { [System.Version]::new(0, 0, 0) }
-	$revision = 0
 
 	$commitLogArgs = @('log', '--reverse', '--pretty=format:%H%x1f%s%x1f%B%x1e')
 	if ($null -ne $latestTagInfo) {
@@ -119,6 +113,7 @@ function Get-ReleaseVersion {
 	$commitLog = Invoke-Git -Arguments $commitLogArgs
 	$records = ($commitLog -join "`n") -split ([char]0x1e)
 
+	$bumpType = 'none'
 	foreach ($record in $records) {
 		if ([string]::IsNullOrWhiteSpace($record)) {
 			continue
@@ -133,35 +128,38 @@ function Get-ReleaseVersion {
 		$body = $parts[2]
 		$commitType = Get-CommitType -Subject $subject -Body $body
 
-		switch ($commitType) {
-			'major' {
-				$baseVersion = [System.Version]::new($baseVersion.Major + 1, 0, 0)
-				$revision = 0
-			}
-			'minor' {
-				$baseVersion = [System.Version]::new($baseVersion.Major, $baseVersion.Minor + 1, 0)
-				$revision = 0
-			}
-			'patch' {
-				$baseVersion = [System.Version]::new($baseVersion.Major, $baseVersion.Minor, $baseVersion.Build + 1)
-				$revision = 0
-			}
-			default {
-				$revision += 1
-			}
+		if ($commitType -eq 'major') {
+			$bumpType = 'major'
+			break
+		}
+		if ($commitType -eq 'minor' -and $bumpType -ne 'major') {
+			$bumpType = 'minor'
+		} elseif ($commitType -eq 'patch' -and $bumpType -eq 'none') {
+			$bumpType = 'patch'
+		}
+	}
+
+	switch ($bumpType) {
+		'major' {
+			$baseVersion = [System.Version]::new($baseVersion.Major + 1, 0, 0)
+		}
+		'minor' {
+			$baseVersion = [System.Version]::new($baseVersion.Major, $baseVersion.Minor + 1, 0)
+		}
+		'patch' {
+			$baseVersion = [System.Version]::new($baseVersion.Major, $baseVersion.Minor, $baseVersion.Build + 1)
 		}
 	}
 
 	return [pscustomobject]@{
 		Version = $baseVersion
-		Revision = $revision
 	}
 }
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $packageName = 'site-section-manager'
 $versionInfo = Get-ReleaseVersion
-$releaseVersion = Format-Version -Version $versionInfo.Version -Revision $versionInfo.Revision
+$releaseVersion = Format-Version -Version $versionInfo.Version
 $gitDescribe = ((Invoke-Git -Arguments @('describe', '--tags', '--always', '--dirty')) -join '').Trim()
 $stageDir = Join-Path $root $OutputDir
 $packageDir = Join-Path $stageDir $packageName

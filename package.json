@@ -1,0 +1,13 @@
+{
+  "name": "site-section-manager",
+  "version": "0.0.0-dev",
+  "description": "WordPress plugin for organizing one site into section-scoped content without multisite.",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "release-notes:ai": "node scripts/generate-ai-release-notes.mjs --root=. --output=release-notes.ai.json",
+    "release-plan": "node scripts/release-plan.mjs --root=. --notes=.github/release-notes.md --json=.github/release-plan.json",
+    "package": "node scripts/package-plugin.mjs --root=. --output-dir=dist"
+  }
+}

@@ -1,3 +1,11 @@
 dist/
 *.zip
 *.code-workspace
+
+# Generated release artifacts
+release-notes.ai.json
+.github/release-notes.md
+.github/release-plan.json
+
+# Node
+node_modules/

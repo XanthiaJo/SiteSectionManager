@@ -36,7 +36,7 @@ Functional footers are allowed only when they carry meaning for the project:
 | `feat` | minor bump | Adds user-facing functionality |
 | `fix` | patch bump | Corrects a bug |
 | any type with `BREAKING CHANGE:` or `!` | major bump | Backward-incompatible change |
-| `docs`, `refactor`, `test`, `chore`, and other non-breaking commits | revision bump | These increment the fourth build segment when there is no newer release tag |
+| `docs`, `refactor`, `test`, `chore`, and other non-breaking commits | no release | These do not trigger a version bump or release on their own |
 
 If no release tag exists yet, packaging starts from `0.0.0`.
 
@@ -61,14 +61,34 @@ feat(admin)!: remove legacy section routing
 
 ## Versioning Mechanics
 
-Versioning is handled by `build.ps1` and `release.ps1`.
+Versioning uses pure 3-segment semver (`vX.Y.Z`). Only `feat`, `fix`, and
+breaking changes produce a release. Other commit types (`docs`, `refactor`,
+`test`, `chore`) do not bump the version or trigger a release on their own.
 
-The build scripts:
+There are two paths to a release:
 
-1. Read the latest `vX.Y.Z` tag as the release baseline.
-2. Walk commit history since that tag.
-3. Derive the next version from Conventional Commit messages.
-4. Stamp the generated plugin header in `dist/site-section-manager/site-section-manager.php`.
+### GitHub Actions (primary release path)
+
+The `.github/workflows/release.yml` workflow is triggered **manually** via
+`workflow_dispatch` (not on push). It:
+
+1. Generates AI-rewritten release notes from commit messages using OpenRouter.
+2. Plans the next semver tag from Conventional Commits since the latest tag.
+3. Creates the git tag and GitHub Release with the generated notes.
+4. Packages the plugin into a zip and uploads it as a release asset.
+
+The workflow accepts a `force_release` input to force a patch release even
+when no release-worthy commits are found.
+
+### Local scripts (manual packaging)
+
+- `build.ps1` packages the plugin for local testing. It derives the version
+  from conventional commits and stamps it in the plugin header. It works on
+  a dirty working tree.
+- `release.ps1` is the stricter local release flow. It requires a clean
+  working tree and creates the matching git tag.
+- `npm run release-notes:ai`, `npm run release-plan`, and `npm run package`
+  are Node.js equivalents used by the GitHub Actions workflow.
 
 ## Dirty Working Trees
 
