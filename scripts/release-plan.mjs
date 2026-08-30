@@ -163,27 +163,76 @@ const notesPath = args.notes ? resolve(args.notes) : resolve(root, '.github/rele
 const jsonPath = args.json ? resolve(args.json) : resolve(root, '.github/release-plan.json');
 const latestTag = findLatestTag(root, headRef);
 if (!latestTag) {
-  const plan = {
-    latestTag: null,
-    latestVersion: null,
-    nextVersion: null,
-    releaseTag: null,
-    bumpType: 'none',
-    shouldRelease: false,
-    commitCount: 0,
-    notesPath,
-    reason: 'No reachable semver tag found. Create a v0.1.0 baseline tag before enabling automatic releases.',
-  };
+  // No semver tag exists yet. Plan v0.1.0 as the initial baseline release,
+  // generating notes from the entire commit history.
+  const baselineVersion = [0, 1, 0];
+  const releaseTag = formatSemver(baselineVersion);
+  const commits = getCommitsSince(root, null, headRef);
+  const aiReleaseNotes = loadAiReleaseNotes(root);
 
-  const notes = [
-    '# No release planned',
-    '',
-    plan.reason,
-    '',
-  ];
+  const groupLabels = {
+    breaking: 'Breaking Changes',
+    feature: 'Features',
+    fix: 'Fixes',
+    docs: 'Documentation',
+    refactor: 'Refactors',
+    test: 'Tests',
+    chore: 'Maintenance',
+    other: 'Other Changes',
+  };
+  const groupOrder = ['breaking', 'feature', 'fix', 'docs', 'refactor', 'test', 'chore', 'other'];
+  const grouped = Object.fromEntries(groupOrder.map((group) => [group, []]));
+
+  for (const commit of commits) {
+    const group = getChangelogGroup(commit.subject);
+    const aiNote = aiReleaseNotes[commit.sha] || {};
+    grouped[group].push({
+      title: aiNote.title || humanizeCommitSubject(commit.subject),
+      details: Array.isArray(aiNote.details) ? aiNote.details : [],
+    });
+  }
+
+  const notes = [];
+  notes.push(`# ${releaseTag}`);
+  notes.push('');
+  notes.push('Initial tagged release.');
+  notes.push('');
+
+  for (const group of groupOrder) {
+    const items = grouped[group];
+    if (items.length === 0) continue;
+
+    notes.push(`## ${groupLabels[group]}`);
+    notes.push('');
+    for (const item of items) {
+      notes.push(`- ${item.title}`);
+      for (const detail of item.details) {
+        notes.push(`  - ${detail}`);
+      }
+    }
+    notes.push('');
+  }
+
+  notes.push('---');
+  notes.push('');
+  notes.push(`_Reworded for readability from ${commits.length} commits by openrouter/free_`);
+  notes.push('');
 
   mkdirSync(dirname(notesPath), { recursive: true });
   writeFileSync(notesPath, notes.join('\n'), 'utf8');
+
+  const plan = {
+    latestTag: null,
+    latestVersion: null,
+    nextVersion: releaseTag,
+    releaseTag,
+    bumpType: 'initial',
+    shouldRelease: true,
+    commitCount: commits.length,
+    notesPath,
+    reason: 'No semver tag found. Creating v0.1.0 as the initial baseline release.',
+  };
+
   mkdirSync(dirname(jsonPath), { recursive: true });
   writeFileSync(jsonPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
   console.log(JSON.stringify(plan, null, 2));
